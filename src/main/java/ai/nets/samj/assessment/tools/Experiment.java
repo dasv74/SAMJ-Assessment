@@ -42,6 +42,7 @@ public class Experiment  {
 
 	public void run(ImageTest image, Regions regions, int iter, SAMModel model,  int margin, int levelNoise) throws IOException, RuntimeException, InterruptedException {
 		long encodingTime = encode(model, image);
+		model.setReturnOnlyBiggest(true);
 		Overlay overlay = new Overlay();
 		MemoryUsage heapMemoryUsage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
 		RuntimeMXBean rt = ManagementFactory.getRuntimeMXBean();
@@ -81,6 +82,7 @@ public class Experiment  {
 			table.addValue("Machine", machine);
 			table.addValue("TimeStamp", new Timestamp(System.currentTimeMillis()).toString());
 		}
+		image.test.setOverlay(overlay);
 			
 		image.save(path, model.getName() + "-" + levelNoise);
 	}

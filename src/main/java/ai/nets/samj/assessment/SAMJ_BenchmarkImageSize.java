@@ -73,7 +73,6 @@ public class SAMJ_BenchmarkImageSize implements PlugIn {
 			SAMModel model;
 			try {
 				model = modelsList.get(param[1]);
-				model.getInstallationManger().setConsumer(System.out::println);
 				if (!model.getInstallationManger().checkEverythingInstalled())
 					model.getInstallationManger().installEverything();
 				experiment.run(image, regions, param[0], model, outerRectPrompt, levelNoise);
