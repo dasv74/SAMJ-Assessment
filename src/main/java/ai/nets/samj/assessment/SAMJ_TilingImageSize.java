@@ -32,6 +32,7 @@ public class SAMJ_TilingImageSize implements PlugIn {
 	
 	@Override
 	public void run(String arg) {
+		/** TODO
 		ArrayList<Dimension> dims = new ArrayList<Dimension>();
 		dims.add(new Dimension(2000, 400));
 		ArrayList<int[]> params = new ArrayList<int[]>();
@@ -60,6 +61,7 @@ public class SAMJ_TilingImageSize implements PlugIn {
 			image.gt.close();
 		}
 		experiment.save();
+		*/
 	}
 
 	public static void main(String[] args) {
