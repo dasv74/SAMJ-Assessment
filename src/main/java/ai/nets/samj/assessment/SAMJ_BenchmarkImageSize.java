@@ -18,6 +18,7 @@ import ai.nets.samj.communication.model.SAMModels;
 import ij.ImageJ;
 import ij.plugin.PlugIn;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 
 /**
  * Assessment of SAMJ. Test the impact of the image size.
@@ -48,9 +49,8 @@ public class SAMJ_BenchmarkImageSize implements PlugIn {
 		// 1 run params: [iteration, numModel, nx, ny, levelNoise]
 		for (int levelNoise = 128; levelNoise<=128;  levelNoise += 16)  // level of noise vs. 256
 			for(int iter = 0; iter<nIterations; iter++)
-				for(int numModel = 0; numModel<nModels; numModel++)
 					for(int i=0; i<dims.size(); i++) 
-						params.add(new int[] {iter, numModel, dims.get(i).width, dims.get(i).height, levelNoise});
+						params.add(new int[] {iter, dims.get(i).width, dims.get(i).height, levelNoise});
 		Collections.shuffle(params);
 
 		Experiment experiment = new Experiment(nameExperiment, Encoding.Mode.WHOLE);
@@ -61,27 +61,30 @@ public class SAMJ_BenchmarkImageSize implements PlugIn {
 			e.printStackTrace();
 			return;
 		}
-		for(int[] param : params) {
-			int nx = param[2];
-			int ny = param[3];
-			int levelNoise = param[4];
-			Regions regions = RegionsFactory.createChevron(nx, ny);
-			ImageTest image = new ImageTest("test", nx, ny, regions, 255-levelNoise);
-			image.addUniformNoise(levelNoise, 1);
-			if (this.display)
-				image.test.show();
-			SAMModel model;
-			try {
-				model = modelsList.get(param[1]);
-				if (!model.getInstallationManger().checkEverythingInstalled())
-					model.getInstallationManger().installEverything();
-				experiment.run(image, regions, param[0], model, outerRectPrompt, levelNoise);
-			} catch (IOException | RuntimeException | InterruptedException | ArchiveException | URISyntaxException | MambaInstallException e) {
-				e.printStackTrace();
+		for(int numModel = 0; numModel<nModels; numModel++) {
+			SAMModel model = modelsList.get(numModel);
+			for(int[] param : params) {
+				int nx = param[1];
+				int ny = param[2];
+				int levelNoise = param[3];
+				Regions regions = RegionsFactory.createChevron(nx, ny);
+				ImageTest image = new ImageTest("test", nx, ny, regions, 255-levelNoise);
+				image.addUniformNoise(levelNoise, 1);
+				if (this.display)
+					image.test.show();
+				try {
+					if (!model.getInstallationManger().checkEverythingInstalled())
+						model.getInstallationManger().installEverything();
+					// Initialize teh python loading first to avoid doing it later
+					model.setImage(ImageJFunctions.wrap(image.test), null);
+					experiment.run(image, regions, param[0], model, outerRectPrompt, levelNoise);
+				} catch (IOException | RuntimeException | InterruptedException | ArchiveException | URISyntaxException | MambaInstallException e) {
+					e.printStackTrace();
+				}
+				image.test.close();
+				image.gt.close();
 			}
-			image.test.close();
-			image.gt.close();
-			break;
+			model.closeProcess();
 		}
 		experiment.save();
 	}
