@@ -40,8 +40,14 @@ public class Experiment  {
 		this.table = new ResultsTable();
 	}
 
-	public void run(ImageTest image, Regions regions, int iter, SAMModel model,  int margin, int levelNoise) throws IOException, RuntimeException, InterruptedException {
-		long encodingTime = encode(model, image);
+	public void run(ImageTest image, Regions regions, int iter, SAMModel model,  int margin, int levelNoise) {
+		long encodingTime;
+		try {
+			encodingTime = encode(model, image);
+		} catch (IOException | RuntimeException | InterruptedException e) {
+			fail(image, iter, model, levelNoise, null);
+			return;
+		}
 		model.setReturnOnlyBiggest(true);
 		Overlay overlay = new Overlay();
 		MemoryUsage heapMemoryUsage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
@@ -54,6 +60,7 @@ public class Experiment  {
 			try {
 				sam = promptAnnotation(prompt, model);
 			} catch (IOException | RuntimeException | InterruptedException e) {
+				fail(image, iter, model, levelNoise, prompt);
 				continue;
 			}
 			logger.info("Final SAM>>> " + region.getRoi(Color.BLACK).getBounds());
@@ -103,6 +110,25 @@ public class Experiment  {
 		logger.info("Polygon " + polygon.npoints + " points");
 		Region sam = new Region(polygon);
 		return sam;
+	}
+	
+	public void fail(ImageTest image, int iter, SAMModel model, int levelNoise, Rectangle prompt) {
+		table.incrementCounter();
+		table.addValue("Model", model.getName());
+		table.addValue("Iteration", (iter+1));
+		table.addValue("Image", image.area());
+		table.addValue("Noise", String.format("%3.2f", (levelNoise/256.0)));
+		table.addValue("Prompt", prompt == null ? -1 : (prompt.width*prompt.height));
+		table.addValue("Encoding", String.format("%3.5f", -1.0));
+		table.addValue("Annotation", String.format("%3.5f", annotationTime / 1000.0));
+		table.addValue("IoU", String.format("%1.5f", -1.0));
+		table.addValue("TP", ""+ -1);
+		table.addValue("FP", ""+ -1);
+		table.addValue("TN", ""+ -1);
+		table.addValue("Memory", -1);
+		table.addValue("Uptime", String.format("%1.2f", -1.0));
+		table.addValue("Machine", "unknown");
+		table.addValue("TimeStamp", new Timestamp(System.currentTimeMillis()).toString());
 	}
 	
 	public void save() {

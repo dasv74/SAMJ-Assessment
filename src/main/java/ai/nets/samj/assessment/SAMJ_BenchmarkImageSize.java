@@ -33,10 +33,8 @@ public class SAMJ_BenchmarkImageSize implements PlugIn {
 	private int nIterations = 1;
 	private int nModels = 1; // Number of models 1 ... 6
 	private int outerRectPrompt = 10; // Number of pixel around the rectangular prompt
-	private final boolean display;
 	
-	private SAMJ_BenchmarkImageSize(boolean display) {
-		this.display = display;
+	private SAMJ_BenchmarkImageSize() {
 	}
 	
 	@Override
@@ -75,10 +73,11 @@ public class SAMJ_BenchmarkImageSize implements PlugIn {
 				try {
 					if (!model.getInstallationManger().checkEverythingInstalled())
 						model.getInstallationManger().installEverything();
-					// Initialize teh python loading first to avoid doing it later
+					// Initialize the python imports first to avoid doing it later
 					model.setImage(ImageJFunctions.wrap(image.test), null);
 					experiment.run(image, regions, param[0], model, outerRectPrompt, levelNoise);
 				} catch (IOException | RuntimeException | InterruptedException | ArchiveException | URISyntaxException | MambaInstallException e) {
+					experiment.fail(image, param[0], model, levelNoise, null);
 					e.printStackTrace();
 				}
 				image.test.close();
@@ -91,8 +90,7 @@ public class SAMJ_BenchmarkImageSize implements PlugIn {
 
 	public static void main(String[] args) {
 		new ImageJ();
-		boolean display = true;
-		SAMJ_BenchmarkImageSize bench = new SAMJ_BenchmarkImageSize(display);
+		SAMJ_BenchmarkImageSize bench = new SAMJ_BenchmarkImageSize();
 		bench.run("");
 	}
 }
