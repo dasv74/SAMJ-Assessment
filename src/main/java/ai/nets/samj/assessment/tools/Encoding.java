@@ -72,9 +72,9 @@ public class Encoding {
 	private void addInstance(SAMModel model, ImagePlus imp) {
 		Img<?> img = ImageJFunctions.wrap(imp);
 		try {
-			SAMModel instance = model.instantiate(img, logger);
-			instance.setReturnOnlyBiggest(true);
-			instances.add(instance);
+			model.setImage(img, logger);
+			model.setReturnOnlyBiggest(true);
+			instances.add(model);
 		} catch (Exception ex) {
 			System.out.println(ex);
 			logger.error(ex.toString());
@@ -122,8 +122,9 @@ public class Encoding {
 			}
 
 		} catch (Exception ex) {
-			System.out.println(ex);
+			ex.printStackTrace();;
 			logger.error(ex.toString());
+			return null;
 		}
 		timeAnnotation = (System.nanoTime() - timeAnnotation) * 0.000000001;
 		return region;
