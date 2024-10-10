@@ -68,8 +68,7 @@ public class SAMJ_BenchmarkImageSize implements PlugIn {
 				Regions regions = RegionsFactory.createChevron(nx, ny);
 				ImageTest image = new ImageTest("test", nx, ny, regions, 255-levelNoise);
 				image.addUniformNoise(levelNoise, 1);
-				if (this.display)
-					image.test.show();
+				image.test.show();
 				try {
 					if (!model.getInstallationManger().checkEverythingInstalled())
 						model.getInstallationManger().installEverything();
