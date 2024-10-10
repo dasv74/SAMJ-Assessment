@@ -9,7 +9,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
 import java.sql.Timestamp;
-import java.util.List;
 
 import ai.nets.samj.assessment.simulation.ImageTest;
 import ai.nets.samj.assessment.simulation.Metric;
@@ -22,46 +21,40 @@ import ij.gui.TextRoi;
 import ij.measure.ResultsTable;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 
 public class Experiment  {
 
 	private String path;
 	private String name;
-	private Encoding.Mode mode;
+	private long annotationTime;
 	private ResultsTable table;
 	private IJLogger logger = new IJLogger();
 	
 	public Experiment( String name, Encoding.Mode mode) {
 		this.path = Tools.getDesktopPath() + File.separator + "SAMJ-Experiment" + File.separator ;
 		this.name = name;
-		this.mode = mode;
 		new File(this.path).mkdir();
 		this.path = this.path + File.separator + name + File.separator;
 		new File(this.path).mkdir();
 		this.table = new ResultsTable();
 	}
 
-	public void run(ImageTest image, Regions regions, int iter, SAMModel model,  int margin, int levelNoise) {
-		int nx = image.gt.getWidth();
-		int ny = image.gt.getHeight();
+	public void run(ImageTest image, Regions regions, int iter, SAMModel model,  int margin, int levelNoise) throws IOException, RuntimeException, InterruptedException {
+		long encodingTime = encode(model, image);
 		Overlay overlay = new Overlay();
 		MemoryUsage heapMemoryUsage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
 		RuntimeMXBean rt = ManagementFactory.getRuntimeMXBean();
 		String machine = System.getProperty("os.name") + " " + System.getProperty("os.version") + " " + System.getProperty("os.arch");
 
 		for(Region region : regions) {
-			Rectangle prompt = region.rectangle(margin);
-			long[] pos = new long[] { prompt.x, prompt.y };
-			long[] shape = new long[] { prompt.x + prompt.width - 1, prompt.y + prompt.height - 1 };
-			Interval rectInterval = new FinalInterval(pos, shape);					
-			Polygon polygon;
+			Rectangle prompt = region.rectangle(margin);				
+			Region sam;
 			try {
-				polygon = model.fetch2dSegmentation(rectInterval).get(0);
+				sam = promptAnnotation(prompt, model);
 			} catch (IOException | RuntimeException | InterruptedException e) {
 				continue;
 			}
-			logger.info("Polygon " + polygon.npoints + " points");
-			Region sam = new Region(polygon);
 			logger.info("Final SAM>>> " + region.getRoi(Color.BLACK).getBounds());
 			
 			overlay.add(new Roi(prompt));
@@ -77,8 +70,8 @@ public class Experiment  {
 			table.addValue("Image", image.area());
 			table.addValue("Noise", String.format("%3.2f", (levelNoise/256.0)));
 			table.addValue("Prompt", (prompt.width*prompt.height));
-			table.addValue("Encoding", String.format("%3.5f", encoder.getEncodingTime()));
-			table.addValue("Annotation", String.format("%3.5f", encoder.getAnnotationTime()));
+			table.addValue("Encoding", String.format("%3.5f", encodingTime / 1000.0));
+			table.addValue("Annotation", String.format("%3.5f", annotationTime / 1000.0));
 			table.addValue("IoU", String.format("%1.5f", metric.IoU));
 			table.addValue("TP", ""+ metric.TP);
 			table.addValue("FP", ""+ metric.FP);
@@ -92,8 +85,22 @@ public class Experiment  {
 		image.save(path, model.getName() + "-" + levelNoise);
 	}
 	
-	private void encode(SAMModel model, Image im) {
-		
+	private long encode(SAMModel model, ImageTest im) throws IOException, RuntimeException, InterruptedException {
+		long tt = System.currentTimeMillis();
+		model.setImage(ImageJFunctions.wrap(im.test), logger);
+		return System.currentTimeMillis() - tt;
+	}
+	
+	private Region promptAnnotation(Rectangle prompt, SAMModel model) throws IOException, RuntimeException, InterruptedException {
+		long[] pos = new long[] { prompt.x, prompt.y };
+		long[] shape = new long[] { prompt.x + prompt.width - 1, prompt.y + prompt.height - 1 };
+		Interval rectInterval = new FinalInterval(pos, shape);			
+		long tt = System.currentTimeMillis();
+		Polygon polygon = model.fetch2dSegmentation(rectInterval).get(0);
+		annotationTime = System.currentTimeMillis() - tt;
+		logger.info("Polygon " + polygon.npoints + " points");
+		Region sam = new Region(polygon);
+		return sam;
 	}
 	
 	public void save() {

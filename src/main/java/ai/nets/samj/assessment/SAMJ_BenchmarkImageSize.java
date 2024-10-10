@@ -89,7 +89,7 @@ public class SAMJ_BenchmarkImageSize implements PlugIn {
 
 	public static void main(String[] args) {
 		new ImageJ();
-		boolean display = false;
+		boolean display = true;
 		SAMJ_BenchmarkImageSize bench = new SAMJ_BenchmarkImageSize(display);
 		bench.run("");
 	}
