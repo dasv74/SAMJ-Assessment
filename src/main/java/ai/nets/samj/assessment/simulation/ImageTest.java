@@ -58,6 +58,7 @@ public class ImageTest {
 		IJ.save(gt, path + "gt-" + modelName + "-" + area() + ".png");
 		IJ.run("Flatten");
 		IJ.save(test, path + "results-" + modelName + "-" + area() + ".png");
+		IJ.runMacro("close(\"*\")");
 	}
 	
 }

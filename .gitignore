@@ -1,7 +1,12 @@
-envs/
+# Maven build directory
+/target/
 
-# Compiled class file
-*.class
+# Eclipse metadata files
+/.classpath
+/.project
+/.settings/
+/engines/
+/models/
 
 # Log file
 *.log
@@ -13,8 +18,19 @@ envs/
 .mtj.tmp/
 
 # Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
 *.tar.gz
+*.rar
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
-replay_pid*
+
+# Idea files
+.idea/
+lib/
+bin/
+appose_x86_64/
