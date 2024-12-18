@@ -19,6 +19,7 @@ import ij.ImageJ;
 import ij.plugin.PlugIn;
 import io.bioimage.modelrunner.apposed.appose.MambaInstallException;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.util.Cast;
 
 /**
  * Assessment of SAMJ. Test the impact of the image size.
@@ -52,13 +53,7 @@ public class SAMJ_BenchmarkImageSize implements PlugIn {
 		Collections.shuffle(params);
 
 		Experiment experiment = new Experiment(nameExperiment, Encoding.Mode.WHOLE);
-		SAMModels modelsList;
-		try {
-			modelsList = new SAMModels();
-		} catch (IOException | RuntimeException | InterruptedException e) {
-			e.printStackTrace();
-			return;
-		}
+		SAMModels modelsList = new SAMModels();
 		for(int numModel = 0; numModel<nModels; numModel++) {
 			SAMModel model = modelsList.get(numModel);
 			for(int[] param : params) {
@@ -73,7 +68,7 @@ public class SAMJ_BenchmarkImageSize implements PlugIn {
 					if (!model.getInstallationManger().checkEverythingInstalled())
 						model.getInstallationManger().installEverything();
 					// Initialize the python imports first to avoid doing it later
-					model.setImage(ImageJFunctions.wrap(image.test), null);
+					model.setImage(Cast.unchecked(ImageJFunctions.wrap(image.test)), null);
 					experiment.run(image, regions, param[0], model, outerRectPrompt, levelNoise);
 				} catch (IOException | RuntimeException | InterruptedException | ArchiveException | URISyntaxException | MambaInstallException e) {
 					experiment.fail(image, param[0], model, levelNoise, null);

@@ -1,7 +1,6 @@
 package ai.nets.samj.assessment.tools;
 
 import java.awt.Color;
-import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +9,7 @@ import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
 import java.sql.Timestamp;
 
+import ai.nets.samj.annotation.Mask;
 import ai.nets.samj.assessment.simulation.ImageTest;
 import ai.nets.samj.assessment.simulation.Metric;
 import ai.nets.samj.assessment.simulation.Region;
@@ -22,6 +22,7 @@ import ij.measure.ResultsTable;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.util.Cast;
 
 public class Experiment  {
 
@@ -96,7 +97,7 @@ public class Experiment  {
 	
 	private long encode(SAMModel model, ImageTest im) throws IOException, RuntimeException, InterruptedException {
 		long tt = System.currentTimeMillis();
-		model.setImage(ImageJFunctions.wrap(im.test), logger);
+		model.setImage(Cast.unchecked(ImageJFunctions.wrap(im.test)), logger);
 		return System.currentTimeMillis() - tt;
 	}
 	
@@ -105,10 +106,10 @@ public class Experiment  {
 		long[] shape = new long[] { prompt.x + prompt.width - 1, prompt.y + prompt.height - 1 };
 		Interval rectInterval = new FinalInterval(pos, shape);			
 		long tt = System.currentTimeMillis();
-		Polygon polygon = model.fetch2dSegmentation(rectInterval).get(0);
+		Mask mask = model.fetch2dSegmentation(rectInterval).get(0);
 		annotationTime = System.currentTimeMillis() - tt;
-		logger.info("Polygon " + polygon.npoints + " points");
-		Region sam = new Region(polygon);
+		logger.info("Polygon " + mask.getContour().npoints + " points");
+		Region sam = new Region(mask.getContour());
 		return sam;
 	}
 	

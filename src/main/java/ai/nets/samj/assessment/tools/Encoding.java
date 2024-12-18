@@ -1,11 +1,11 @@
 package ai.nets.samj.assessment.tools;
 
 import java.awt.Color;
-import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
 
+import ai.nets.samj.annotation.Mask;
 import ai.nets.samj.assessment.simulation.Region;
 import ai.nets.samj.communication.model.SAMModel;
 import ij.ImagePlus;
@@ -14,6 +14,7 @@ import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.img.Img;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.util.Cast;
 
 public class Encoding {
 
@@ -72,7 +73,7 @@ public class Encoding {
 	private void addInstance(SAMModel model, ImagePlus imp) {
 		Img<?> img = ImageJFunctions.wrap(imp);
 		try {
-			model.setImage(img, logger);
+			model.setImage(Cast.unchecked(img), logger);
 			model.setReturnOnlyBiggest(true);
 			instances.add(model);
 		} catch (Exception ex) {
@@ -111,10 +112,10 @@ public class Encoding {
 			long[] pos = new long[] { prompt.x, prompt.y };
 			long[] shape = new long[] { prompt.x + prompt.width - 1, prompt.y + prompt.height - 1 };
 			Interval rectInterval = new FinalInterval(pos, shape);					
-			List<Polygon> polygons = instance.fetch2dSegmentation(rectInterval);
-			for (Polygon polygon : polygons) {
-				logger.info("Polygon " + polygon.npoints + " points");
-				region = new Region(polygon);
+			List<Mask> masks = instance.fetch2dSegmentation(rectInterval);
+			for (Mask mask : masks) {
+				logger.info("Polygon " + mask.getContour().npoints + " points");
+				region = new Region(mask.getContour());
 				region.permuteXY(); // TODO Permutation Axis XY
 				logger.info("Translate>>> " + tile.x + " "+  tile.y);
 				region.translate(tile.x, tile.y);
